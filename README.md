@@ -16,7 +16,7 @@ DeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "modeY"
 
 - input\
     A clip to process.\
-    It must be in YUV 8..16-bit planar format.
+    It must be in 8..16-bit planar format.
     
 - limitY, limitU, limitV\
     Limits how much a pixel is changed. Each new pixel will be in the range \[old pixel - limit, old pixel + limit].\
@@ -26,7 +26,8 @@ DeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "modeY"
     
 - modeY, modeU, modeV\
     Processing mode.\
-    Mode 0 is the strongest. Mode 5 is the weakest.\
+    Mode 0 is the strongest.\
+    Mode 5 is the weakest.\
     Default: modeY = 1; modeU = modeY; modeV = modeU.
 
 - interlaced\
