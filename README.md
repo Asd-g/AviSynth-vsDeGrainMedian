@@ -9,7 +9,7 @@ This is [a port of the VapourSynth plugin DegrainMedian](https://github.com/dubh
 # Usage
 
 ```
-DeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "modeY", int "modeU", int "modeV", bool "interlaced", bool "norow", int "opt")
+vsDeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "modeY", int "modeU", int "modeV", bool "interlaced", bool "norow", int "opt")
 ```
 
 ## Parameters:
