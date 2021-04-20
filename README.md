@@ -33,7 +33,6 @@ vsDeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "mode
 - interlaced\
     If True, the top line and the bottom line of the 3x3 neighbourhood will come from the same field as the middle line. In other words, one line will be skipped between the top line and the middle line, and between the middle line and the bottom line.\
     This parameter should only be used when the input clip contains interlaced video.\
-    Must be between 0.0..255.0.\
     Default: false.
     
 - norow\
