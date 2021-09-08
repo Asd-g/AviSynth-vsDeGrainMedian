@@ -1,4 +1,4 @@
-# Description
+## Description
 
 DeGrainMedian is a spatio-temporal limited median denoiser. It uses various methods to replace every pixel with one selected from its 3x3 neighbourhood, from either the current, previous, or next frame.
 
@@ -6,13 +6,19 @@ The first column and the last column are simply copied from the source frame. Th
 
 This is [a port of the VapourSynth plugin DegrainMedian](https://github.com/dubhater/vapoursynth-degrainmedian).
 
-# Usage
+### Requirements:
+
+- AviSynth 2.60 / AviSynth+ 3.4 or later
+
+- Microsoft VisualC++ Redistributable Package 2022 (can be downloaded from [here](https://github.com/abbodi1406/vcredist/releases))
+
+### Usage:
 
 ```
 vsDeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "modeY", int "modeU", int "modeV", bool "interlaced", bool "norow", int "opt")
 ```
 
-## Parameters:
+### Parameters:
 
 - input\
     A clip to process.\
@@ -46,26 +52,24 @@ vsDeGrainMedian (clip input, int "limitY", int "limitU", int "limitV", int "mode
     1: Use SSE2 code.\
     Default: -1.
     
-# Building
+### Building:
 
-## Windows
+- Windows\
+    Use solution files.
 
-Use solution files.
-
-## Linux
-
-### Requirements
-
-- Git
-- C++11 compiler
-- CMake >= 3.16
-
-```
-git clone https://github.com/Asd-g/AviSynth-vsDeGrainMedian && \
-cd AviSynth-vsDeGrainMedian && \
-mkdir build && \
-cd build && \
-cmake .. && \
-make -j$(nproc) && \
-sudo make install
-```
+- Linux
+    ```
+    Requirements:
+        - Git
+        - C++11 compiler
+        - CMake >= 3.16
+    ```
+    ```
+    git clone https://github.com/Asd-g/AviSynth-vsDeGrainMedian && \
+    cd AviSynth-vsDeGrainMedian && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    sudo make install
+    ```
