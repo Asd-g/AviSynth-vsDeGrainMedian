@@ -15,35 +15,35 @@
         n4, n5, n6, \
         n7, n8, n9; \
     \
-    p1 = prevp[x - distance - 1]; \
-    p2 = prevp[x - distance]; \
-    p3 = prevp[x - distance + 1]; \
+    p1 = prevp[x - p_dist - 1]; \
+    p2 = prevp[x - p_dist]; \
+    p3 = prevp[x - p_dist + 1]; \
     p4 = prevp[x - 1]; \
     p5 = prevp[x]; \
     p6 = prevp[x + 1]; \
-    p7 = prevp[x + distance - 1]; \
-    p8 = prevp[x + distance]; \
-    p9 = prevp[x + distance + 1]; \
+    p7 = prevp[x + p_dist - 1]; \
+    p8 = prevp[x + p_dist]; \
+    p9 = prevp[x + p_dist + 1]; \
     \
-    s1 = srcp[x - distance - 1]; \
-    s2 = srcp[x - distance]; \
-    s3 = srcp[x - distance + 1]; \
+    s1 = srcp[x - s_dist - 1]; \
+    s2 = srcp[x - s_dist]; \
+    s3 = srcp[x - s_dist + 1]; \
     s4 = srcp[x - 1]; \
     s5 = srcp[x]; \
     s6 = srcp[x + 1]; \
-    s7 = srcp[x + distance - 1]; \
-    s8 = srcp[x + distance]; \
-    s9 = srcp[x + distance + 1]; \
+    s7 = srcp[x + s_dist - 1]; \
+    s8 = srcp[x + s_dist]; \
+    s9 = srcp[x + s_dist + 1]; \
     \
-    n1 = nextp[x - distance - 1]; \
-    n2 = nextp[x - distance]; \
-    n3 = nextp[x - distance + 1]; \
+    n1 = nextp[x - n_dist - 1]; \
+    n2 = nextp[x - n_dist]; \
+    n3 = nextp[x - n_dist + 1]; \
     n4 = nextp[x - 1]; \
     n5 = nextp[x]; \
     n6 = nextp[x + 1]; \
-    n7 = nextp[x + distance - 1]; \
-    n8 = nextp[x + distance]; \
-    n9 = nextp[x + distance + 1];
+    n7 = nextp[x + n_dist - 1]; \
+    n8 = nextp[x + n_dist]; \
+    n9 = nextp[x + n_dist + 1];
 
 static FORCE_INLINE void checkBetterNeighboursScalar(int a, int b, int& diff, int& min, int& max)
 {
@@ -123,7 +123,7 @@ template <int mode, bool norow, typename PixelType>
 struct DegrainScalar
 {
 
-    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int distance, int limit, int pixel_max)
+    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
     {
         LoadPixelsScalar;
 
@@ -155,7 +155,7 @@ template <bool norow, typename PixelType>
 struct DegrainScalar<0, norow, PixelType>
 {
 
-    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int distance, int limit, int pixel_max)
+    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
     {
         LoadPixelsScalar;
 
@@ -187,18 +187,26 @@ struct DegrainScalar<0, norow, PixelType>
 };
 
 template <int mode, bool norow, typename PixelType>
-static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max)
+static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max)
 {
     const PixelType* prevp = (const PixelType*)prevp8;
     const PixelType* srcp = (const PixelType*)srcp8;
     const PixelType* nextp = (const PixelType*)nextp8;
     PixelType* dstp = (PixelType*)dstp8;
 
-    stride /= sizeof(PixelType);
+    prev_stride /= sizeof(PixelType);
+    src_stride /= sizeof(PixelType);
+    next_stride /= sizeof(PixelType);
     dst_stride /= sizeof(PixelType);
     width /= sizeof(PixelType);
 
-    const int distance = stride << interlaced;
+    // Each frame steps by its own pitch. prev, src and next need not share
+    // one: a field subframe views its woven parent at double pitch, while a
+    // freshly allocated frame is compact, and a filter upstream can hand back
+    // a mixture of the two.
+    const int p_dist = prev_stride << interlaced;
+    const int s_dist = src_stride << interlaced;
+    const int n_dist = next_stride << interlaced;
     const int skip_rows = 1 << interlaced;
 
     // Copy first line(s).
@@ -206,9 +214,9 @@ static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, cons
     {
         memcpy(dstp, srcp, width * sizeof(PixelType));
 
-        prevp += stride;
-        srcp += stride;
-        nextp += stride;
+        prevp += prev_stride;
+        srcp += src_stride;
+        nextp += next_stride;
         dstp += dst_stride;
     }
 
@@ -217,13 +225,13 @@ static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, cons
         dstp[0] = srcp[0];
 
         for (int x = 1; x < width - 1; ++x)
-            dstp[x] = DegrainScalar<mode, norow, PixelType>::degrainPixel(prevp, srcp, nextp, x, distance, limit, pixel_max);
+            dstp[x] = DegrainScalar<mode, norow, PixelType>::degrainPixel(prevp, srcp, nextp, x, p_dist, s_dist, n_dist, limit, pixel_max);
 
         dstp[width - 1] = srcp[width - 1];
 
-        prevp += stride;
-        srcp += stride;
-        nextp += stride;
+        prevp += prev_stride;
+        srcp += src_stride;
+        nextp += next_stride;
         dstp += dst_stride;
     }
 
@@ -232,7 +240,7 @@ static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, cons
     {
         memcpy(dstp, srcp, width * sizeof(PixelType));
 
-        srcp += stride;
+        srcp += src_stride;
         dstp += dst_stride;
     }
 }
@@ -390,9 +398,12 @@ vsDeGrainMedian::vsDeGrainMedian(PClip _child, int limitY, int limitU, int limit
 
 PVideoFrame __stdcall vsDeGrainMedian::GetFrame(int n, IScriptEnvironment* env)
 {
-    PVideoFrame prev = child->GetFrame(n - 1, env);
+    // Clamped. Unclamped, frame 0 asks the parent for frame -1 and the last
+    // frame asks for one past the end. Core filters tolerate that; an older
+    // third-party filter upstream need not, and DePanInterleave does not.
+    PVideoFrame prev = child->GetFrame(std::max(n - 1, 0), env);
     PVideoFrame src = child->GetFrame(n, env);
-    PVideoFrame next = child->GetFrame(n + 1, env);
+    PVideoFrame next = child->GetFrame(std::min(n + 1, vi.num_frames - 1), env);
     PVideoFrame dst = (has_at_least_v8) ? env->NewVideoFrameP(vi, &src) : env->NewVideoFrame(vi);
 
     const int pixel_max = (1 << vi.BitsPerComponent()) - 1;
@@ -404,6 +415,8 @@ PVideoFrame __stdcall vsDeGrainMedian::GetFrame(int n, IScriptEnvironment* env)
     for (int i = 0; i < planecount; ++i)
     {
         const int stride = src->GetPitch(planes[i]);
+        const int prev_stride = prev->GetPitch(planes[i]);
+        const int next_stride = next->GetPitch(planes[i]);
         const int dst_stride = dst->GetPitch(planes[i]);
         const int width = src->GetRowSize(planes[i]);
         const int height = src->GetHeight(planes[i]);
@@ -422,7 +435,7 @@ PVideoFrame __stdcall vsDeGrainMedian::GetFrame(int n, IScriptEnvironment* env)
 
         int _limit = pixel_max * limit[i] / 255;
 
-        degrainp[i](prevp, srcp, nextp, dstp, stride, dst_stride, width, height, _limit, _interlaced, pixel_max);
+        degrainp[i](prevp, srcp, nextp, dstp, prev_stride, stride, next_stride, dst_stride, width, height, _limit, _interlaced, pixel_max);
     }
 
     return dst;
