@@ -9,7 +9,7 @@
 #endif
 
 template <int mode, bool norow, typename PixelType>
-void degrainPlaneSSE2(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+void degrainPlaneSSE2(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
 
 class vsDeGrainMedian : public GenericVideoFilter
 {
@@ -17,7 +17,7 @@ class vsDeGrainMedian : public GenericVideoFilter
     bool _interlaced;
     bool has_at_least_v8;
 
-    void (*degrainp[3])(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+    void (*degrainp[3])(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
 
 public:
     vsDeGrainMedian(PClip _child, int limitY, int limitU, int limitV, int modeY, int modeU, int modeV, bool interlaced, bool norow, int opt, IScriptEnvironment* env);
