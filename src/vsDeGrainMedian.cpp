@@ -45,7 +45,7 @@
     n8 = nextp[x + n_dist]; \
     n9 = nextp[x + n_dist + 1];
 
-static FORCE_INLINE void checkBetterNeighboursScalar(int a, int b, int& diff, int& min, int& max)
+static AVS_FORCEINLINE void checkBetterNeighboursScalar(int a, int b, int& diff, int& min, int& max)
 {
     int new_diff = std::abs(a - b);
 
@@ -58,7 +58,7 @@ static FORCE_INLINE void checkBetterNeighboursScalar(int a, int b, int& diff, in
 }
 
 template <int mode>
-static FORCE_INLINE void diagWeightScalar(int oldp, int bound1, int bound2, int& old_result, int& old_weight, int pixel_max)
+static AVS_FORCEINLINE void diagWeightScalar(int oldp, int bound1, int bound2, int& old_result, int& old_weight, int pixel_max)
 {
     // Sucks but I can't figure it out any further.
 
@@ -93,7 +93,7 @@ static FORCE_INLINE void diagWeightScalar(int oldp, int bound1, int bound2, int&
 }
 
 template <>
-FORCE_INLINE void diagWeightScalar<5>(int oldp, int bound1, int bound2, int& old_result, int& old_weight, int pixel_max)
+AVS_FORCEINLINE void diagWeightScalar<5>(int oldp, int bound1, int bound2, int& old_result, int& old_weight, int pixel_max)
 {
     (void)pixel_max;
 
@@ -112,7 +112,7 @@ FORCE_INLINE void diagWeightScalar<5>(int oldp, int bound1, int bound2, int& old
     }
 }
 
-static FORCE_INLINE int limitPixelCorrectionScalar(int old_pixel, int new_pixel, int limit, int pixel_max)
+static AVS_FORCEINLINE int limitPixelCorrectionScalar(int old_pixel, int new_pixel, int limit, int pixel_max)
 {
     int lower = std::max(0, old_pixel - limit);
     int upper = std::min(old_pixel + limit, pixel_max);
@@ -122,8 +122,8 @@ static FORCE_INLINE int limitPixelCorrectionScalar(int old_pixel, int new_pixel,
 template <int mode, bool norow, typename PixelType>
 struct DegrainScalar
 {
-
-    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
+    static AVS_FORCEINLINE int degrainPixel(const PixelType* AVS_RESTRICT prevp, const PixelType* AVS_RESTRICT srcp,
+        const PixelType* AVS_RESTRICT nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
     {
         LoadPixelsScalar;
 
@@ -154,8 +154,8 @@ struct DegrainScalar
 template <bool norow, typename PixelType>
 struct DegrainScalar<0, norow, PixelType>
 {
-
-    static FORCE_INLINE int degrainPixel(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
+    static AVS_FORCEINLINE int degrainPixel(const PixelType* AVS_RESTRICT prevp, const PixelType* AVS_RESTRICT srcp,
+        const PixelType* AVS_RESTRICT nextp, int x, int p_dist, int s_dist, int n_dist, int limit, int pixel_max)
     {
         LoadPixelsScalar;
 
@@ -187,7 +187,8 @@ struct DegrainScalar<0, norow, PixelType>
 };
 
 template <int mode, bool norow, typename PixelType>
-static void degrainPlaneScalar(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max)
+static void degrainPlaneScalar(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8, const uint8_t* AVS_RESTRICT nextp8,
+    uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max)
 {
     const PixelType* prevp = (const PixelType*)prevp8;
     const PixelType* srcp = (const PixelType*)srcp8;

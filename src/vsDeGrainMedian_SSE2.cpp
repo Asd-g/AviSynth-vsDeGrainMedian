@@ -47,7 +47,7 @@
     n9 = _mm_loadu_si128((const __m128i *)&nextp[x + n_dist + 1]);
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_min_epu(const __m128i& a, const __m128i& b)
+static AVS_FORCEINLINE __m128i mm_min_epu(const __m128i& a, const __m128i& b)
 {
     if (sizeof(PixelType) == 1)
         return _mm_min_epu8(a, b);
@@ -59,7 +59,7 @@ static FORCE_INLINE __m128i mm_min_epu(const __m128i& a, const __m128i& b)
 }
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_max_epu(const __m128i& a, const __m128i& b)
+static AVS_FORCEINLINE __m128i mm_max_epu(const __m128i& a, const __m128i& b)
 {
     if (sizeof(PixelType) == 1)
         return _mm_max_epu8(a, b);
@@ -71,7 +71,7 @@ static FORCE_INLINE __m128i mm_max_epu(const __m128i& a, const __m128i& b)
 }
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_adds_epu(const __m128i& a, const __m128i& b, const __m128i& pixel_max)
+static AVS_FORCEINLINE __m128i mm_adds_epu(const __m128i& a, const __m128i& b, const __m128i& pixel_max)
 {
     if (sizeof(PixelType) == 1)
         return _mm_adds_epu8(a, b);
@@ -83,7 +83,7 @@ static FORCE_INLINE __m128i mm_adds_epu(const __m128i& a, const __m128i& b, cons
 }
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_subs_epu(const __m128i& a, const __m128i& b)
+static AVS_FORCEINLINE __m128i mm_subs_epu(const __m128i& a, const __m128i& b)
 {
     if (sizeof(PixelType) == 1)
         return _mm_subs_epu8(a, b);
@@ -94,7 +94,7 @@ static FORCE_INLINE __m128i mm_subs_epu(const __m128i& a, const __m128i& b)
 }
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_cmpeq_epi(const __m128i& a, const __m128i& b)
+static AVS_FORCEINLINE __m128i mm_cmpeq_epi(const __m128i& a, const __m128i& b)
 {
     if (sizeof(PixelType) == 1)
         return _mm_cmpeq_epi8(a, b);
@@ -105,7 +105,7 @@ static FORCE_INLINE __m128i mm_cmpeq_epi(const __m128i& a, const __m128i& b)
 }
 
 template <typename PixelType>
-static FORCE_INLINE __m128i mm_set1_epi(int value)
+static AVS_FORCEINLINE __m128i mm_set1_epi(int value)
 {
     if (sizeof(PixelType) == 1)
         return _mm_set1_epi8(value);
@@ -116,7 +116,7 @@ static FORCE_INLINE __m128i mm_set1_epi(int value)
 }
 
 template <typename PixelType>
-static FORCE_INLINE void checkBetterNeighboursSSE2(const __m128i& a, const __m128i& b, __m128i& diff, __m128i& min, __m128i& max)
+static AVS_FORCEINLINE void checkBetterNeighboursSSE2(const __m128i& a, const __m128i& b, __m128i& diff, __m128i& min, __m128i& max)
 {
     __m128i new_min = mm_min_epu<PixelType>(a, b);
     __m128i new_max = mm_max_epu<PixelType>(a, b);
@@ -143,8 +143,7 @@ static FORCE_INLINE void checkBetterNeighboursSSE2(const __m128i& a, const __m12
 template <int mode, typename PixelType>
 struct Asdf
 {
-
-    static FORCE_INLINE void diagWeightSSE2(const __m128i& oldp, const __m128i& bound1, const __m128i& bound2, __m128i& old_result, __m128i& old_weight, const __m128i& pixel_max)
+    static AVS_FORCEINLINE void diagWeightSSE2(const __m128i& oldp, const __m128i& bound1, const __m128i& bound2, __m128i& old_result, __m128i& old_weight, const __m128i& pixel_max)
     {
         __m128i max = mm_max_epu<PixelType>(bound1, bound2);
         __m128i min = mm_min_epu<PixelType>(bound1, bound2);
@@ -181,8 +180,7 @@ struct Asdf
 template <typename PixelType>
 struct Asdf<5, PixelType>
 {
-
-    static FORCE_INLINE void diagWeightSSE2(const __m128i& oldp, const __m128i& bound1, const __m128i& bound2, __m128i& old_result, __m128i& old_weight, const __m128i& pixel_max)
+    static AVS_FORCEINLINE void diagWeightSSE2(const __m128i& oldp, const __m128i& bound1, const __m128i& bound2, __m128i& old_result, __m128i& old_weight, const __m128i& pixel_max)
     {
         (void)pixel_max;
 
@@ -205,38 +203,23 @@ struct Asdf<5, PixelType>
 };
 
 template <typename PixelType>
-static FORCE_INLINE __m128i limitPixelCorrectionSSE2(const __m128i& old_pixel, const __m128i& new_pixel, const __m128i& limit, const __m128i& pixel_max)
+static AVS_FORCEINLINE __m128i limitPixelCorrectionSSE2(const __m128i& old_pixel, const __m128i& new_pixel, const __m128i& limit,
+    const __m128i& pixel_max)
 {
-    __m128i m1, m3;
+    const __m128i upper = mm_adds_epu<PixelType>(old_pixel, limit, pixel_max);
+    const __m128i lower = mm_subs_epu<PixelType>(old_pixel, limit);
 
-    __m128i upper = mm_adds_epu<PixelType>(old_pixel, limit, pixel_max);
-    __m128i lower = mm_subs_epu<PixelType>(old_pixel, limit);
+    const __m128i clamped = mm_min_epu<PixelType>(new_pixel, upper);
 
-    m3 = mm_subs_epu<PixelType>(new_pixel, old_pixel);
-    m3 = mm_subs_epu<PixelType>(m3, limit);
-    m3 = mm_cmpeq_epi<PixelType>(m3, _mm_setzero_si128());
-
-    m1 = _mm_and_si128(new_pixel, m3);
-    m3 = _mm_andnot_si128(m3, upper);
-    m1 = _mm_or_si128(m1, m3);
-
-    m3 = mm_subs_epu<PixelType>(old_pixel, m1);
-    m3 = mm_subs_epu<PixelType>(m3, limit);
-    m3 = mm_cmpeq_epi<PixelType>(m3, _mm_setzero_si128());
-
-    m1 = _mm_and_si128(m1, m3);
-    m3 = _mm_andnot_si128(m3, lower);
-    m1 = _mm_or_si128(m1, m3);
-
-    return m1;
+    return mm_max_epu<PixelType>(clamped, lower);
 }
 
 // Wrapped in struct because function templates can't be partially specialised.
 template <int mode, bool norow, typename PixelType>
 struct DegrainSSE2
 {
-
-    static FORCE_INLINE __m128i degrainPixels(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, const __m128i& limit, const __m128i& pixel_max)
+    static AVS_FORCEINLINE __m128i degrainPixels(const PixelType* AVS_RESTRICT prevp, const PixelType* AVS_RESTRICT srcp,
+        const PixelType* AVS_RESTRICT nextp, int x, int p_dist, int s_dist, int n_dist, const __m128i& limit, const __m128i& pixel_max)
     {
         LoadPixelsSSE2;
 
@@ -266,8 +249,8 @@ struct DegrainSSE2
 template <bool norow, typename PixelType>
 struct DegrainSSE2<0, norow, PixelType>
 {
-
-    static FORCE_INLINE __m128i degrainPixels(const PixelType* prevp, const PixelType* srcp, const PixelType* nextp, int x, int p_dist, int s_dist, int n_dist, const __m128i& limit, const __m128i& pixel_max)
+    static AVS_FORCEINLINE __m128i degrainPixels(const PixelType* AVS_RESTRICT prevp, const PixelType* AVS_RESTRICT srcp,
+        const PixelType* AVS_RESTRICT nextp, int x, int p_dist, int s_dist, int n_dist, const __m128i& limit, const __m128i& pixel_max)
     {
         LoadPixelsSSE2;
 
@@ -298,7 +281,9 @@ struct DegrainSSE2<0, norow, PixelType>
 };
 
 template <int mode, bool norow, typename PixelType>
-void degrainPlaneSSE2(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max)
+void degrainPlaneSSE2(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8, const uint8_t* AVS_RESTRICT nextp8,
+    uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit,
+    int interlaced, int pixel_max)
 {
     const PixelType* prevp = (const PixelType*)prevp8;
     const PixelType* srcp = (const PixelType*)srcp8;
@@ -392,30 +377,78 @@ void degrainPlaneSSE2(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t
     }
 }
 
-template void degrainPlaneSSE2<0, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<1, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<2, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<3, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<4, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<5, true, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<0, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<1, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<2, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<3, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<4, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<5, true, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
 
-template void degrainPlaneSSE2<0, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<1, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<2, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<3, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<4, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<5, false, uint8_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<0, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<1, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<2, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<3, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<4, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<5, false, uint8_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
 
-template void degrainPlaneSSE2<0, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<1, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<2, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<3, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<4, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<5, true, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<0, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<1, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<2, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<3, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<4, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<5, true, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
 
-template void degrainPlaneSSE2<0, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<1, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<2, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<3, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<4, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
-template void degrainPlaneSSE2<5, false, uint16_t>(const uint8_t* prevp8, const uint8_t* srcp8, const uint8_t* nextp8, uint8_t* dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride, int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<0, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<1, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<2, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<3, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<4, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
+template void degrainPlaneSSE2<5, false, uint16_t>(const uint8_t* AVS_RESTRICT prevp8, const uint8_t* AVS_RESTRICT srcp8,
+    const uint8_t* AVS_RESTRICT nextp8, uint8_t* AVS_RESTRICT dstp8, int prev_stride, int src_stride, int next_stride, int dst_stride,
+    int width, int height, int limit, int interlaced, int pixel_max);
